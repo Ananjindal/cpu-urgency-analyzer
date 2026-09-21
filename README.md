@@ -1,70 +1,62 @@
-# scx_gpu_urgent
+# CPU Urgency Analyzer
 
-**GPU-Urgency-Aware Host CPU Scheduling for Multi-Tenant LLM Inference via Linux sched_ext**
+## Overview
 
-## Status: Review 2 — Prototype Pipeline
+This project studies how CPU contention affects the response time of a workload and uses Linux scheduler telemetry to estimate when a workload is experiencing increased CPU scheduling pressure.
 
-This review does **not** implement the final research system. It establishes a working
-experimental pipeline that will later be extended into a full GPU-urgency-aware
-`sched_ext` scheduler.
+The original project was planned around GPU-aware scheduling and vLLM. However, the available laptop environment did not provide usable NVIDIA GPU access. Therefore, the implementation was adapted into a **CPU-based scheduling analysis project** using Python, Linux `stress-ng`, and eBPF scheduler tracing.
 
-```
-vLLM inference  →  CPU contention (stress-ng)  →  CPU telemetry (eBPF/tracing)
-      →  GPU monitoring (nvidia-smi/NVML)  →  CPU/GPU correlation
-      →  basic rule-based GPU Urgency Score  →  preliminary results
-```
+The project measures:
 
-## Review 2 modules
+- Workload latency under normal conditions
+- Workload latency during CPU contention
+- CPU scheduler wait time
+- Change in scheduler wait time when CPU resources are constrained
+- A project-defined CPU urgency score
 
-| # | Module | Path | Status |
-|---|--------|------|--------|
-| 1 | LLM inference (vLLM) | `benchmark/vllm_benchmark.py` | ✅ implemented |
-| 2 | CPU contention (stress-ng) | `contention/run_contention.sh` | pending |
-| 3 | CPU telemetry (eBPF/tracing) | `telemetry/cpu_monitor.py` | pending |
-| 4 | GPU monitoring (NVML) | `telemetry/gpu_monitor.py` | pending |
-| 5 | CPU/GPU correlation | `analysis/correlate.py` | pending |
-| 6 | Basic urgency score (rule-based) | `urgency/urgency_score.py` | pending |
-| 7 | Basic sched_ext prototype (if kernel supports it) | `scheduler/` | pending |
+---
 
-Modules are added incrementally, one at a time, and each is runnable and verifiable on its own
-before the next is built.
+## Project Objectives
 
-## Experiments (Review 2 minimum)
+The main objectives are:
 
-1. vLLM, no background CPU contention (baseline)
-2. vLLM + low CPU contention
-3. vLLM + medium/high CPU contention
+1. Establish a baseline workload performance.
+2. Introduce CPU contention using `stress-ng`.
+3. Measure the effect of contention on workload latency.
+4. Collect scheduler-level CPU wait-time information using eBPF.
+5. Compare baseline and contention conditions.
+6. Calculate a CPU urgency score from latency and scheduler wait-time changes.
 
-Each experiment records, per request: TTFT, TPOT, total latency, throughput (if practical),
-CPU scheduling/wait info, GPU utilization, GPU idle/activity — saved as CSV under `data/` and
-`results/`.
+---
 
-## Setup
+## System Architecture
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Requires a Linux machine with an NVIDIA GPU and a CUDA-compatible PyTorch/vLLM install.
-
-## Module 1 — vLLM benchmark (implemented)
-
-Runs offline batched inference over a set of prompts with a small/medium HF model,
-using vLLM's per-request `RequestMetrics` (`arrival_time`, `first_token_time`,
-`finished_time`) to compute TTFT and TPOT without needing a separate server process.
-
-```bash
-python3 benchmark/vllm_benchmark.py \
-    --model Qwen/Qwen2.5-1.5B-Instruct \
-    --num-prompts 20 \
-    --max-tokens 128 \
-    --tag baseline \
-    --out data/baseline.csv
-```
-
-Pick a model size that fits the available GPU memory — swap `--model` for anything
-HF/vLLM-compatible (e.g. a 1B–3B instruct model for smaller GPUs).
-
-See the table above for what's next — we add one module at a time.
+```text
+                ┌─────────────────────┐
+                │   Python Workload   │
+                │   LLM Benchmark     │
+                └──────────┬──────────┘
+                           │
+                           ▼
+                ┌─────────────────────┐
+                │   Linux Scheduler   │
+                └──────────┬──────────┘
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+             ▼                           ▼
+    ┌────────────────┐          ┌────────────────┐
+    │ Normal CPU     │          │ CPU Contention │
+    │ Conditions     │          │ stress-ng      │
+    └────────────────┘          └────────────────┘
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+                ┌─────────────────────┐
+                │ eBPF Scheduler      │
+                │ Telemetry           │
+                └──────────┬──────────┘
+                           ▼
+                ┌─────────────────────┐
+                │ CPU Urgency Score   │
+                └─────────────────────┘

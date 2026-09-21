@@ -1,0 +1,35 @@
+BEGIN
+{
+    printf("Starting CPU scheduling telemetry...\n");
+    printf("Press Ctrl+C to stop.\n\n");
+}
+
+tracepoint:sched:sched_wakeup
+{
+    @wake_time[args->pid] = nsecs;
+}
+
+tracepoint:sched:sched_wakeup_new
+{
+    @wake_time[args->pid] = nsecs;
+}
+
+tracepoint:sched:sched_switch
+{
+    $pid = args->next_pid;
+
+    if (@wake_time[$pid])
+    {
+        $wait_us = (nsecs - @wake_time[$pid]) / 1000;
+
+        printf(
+            "CPU=%d PID=%d COMM=%s WAIT_US=%d\n",
+            cpu,
+            $pid,
+            args->next_comm,
+            $wait_us
+        );
+
+        delete(@wake_time[$pid]);
+    }
+}

@@ -1,0 +1,7 @@
+Condition,Run,Requests,Mean Latency (ms),Median Latency (ms),P95 Latency (ms),Throughput (tokens/s)
+Baseline,1,20,55.5745,55.3629,57.4494,575.2566
+Baseline,2,20,59.1456,57.8770,65.1553,540.3701
+Baseline,3,20,56.7546,56.9861,58.9564,563.1798
+Contention,1,20,69.9293,67.5866,86.3999,457.1686
+Contention,2,20,70.2416,68.9161,79.3536,455.1111
+Contention,3,20,69.9286,67.3828,79.6275,457.1585

@@ -1,0 +1,26 @@
+BEGIN
+{
+    printf("timestamp_ns,pid,comm,wait_us\n");
+}
+
+tracepoint:sched:sched_wakeup
+{
+    @wake_time[args->pid] = nsecs;
+}
+
+tracepoint:sched:sched_wakeup_new
+{
+    @wake_time[args->pid] = nsecs;
+}
+
+tracepoint:sched:sched_switch
+{
+    $pid = args->next_pid;
+
+    if (@wake_time[$pid]) {
+        $wait_us = (nsecs - @wake_time[$pid]) / 1000;
+        printf("%llu,%d,%s,%llu\n",
+            nsecs, $pid, args->next_comm, $wait_us);
+        delete(@wake_time[$pid]);
+    }
+}

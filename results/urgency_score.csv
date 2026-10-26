@@ -1,0 +1,2 @@
+baseline_mean_latency_s,contention_mean_latency_s,latency_increase_percent,latency_urgency_score,urgency_level
+0.05577320425002195,0.06838928670001673,22.620329277548763,22.620329277548763,MEDIUM

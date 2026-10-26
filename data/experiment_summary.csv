@@ -1,4 +1,3 @@
-Condition,Average Latency (s),Average CPU Wait (us),Latency Increase (%),Wait Increase (%)
-Baseline,0.2035,11.31,0.0,0.0
-CPU Contention,0.2369,11.34,16.41277641277642,0.2652519893899148
-Pinned CPU,,15.48,,36.87002652519894
+Condition,Requests,Mean Latency (s),Median Latency (s),P95 Latency (s),Throughput (tokens/s),Total Recorded Work Duration (s),Mean Latency Change (%),Throughput Change (%)
+Baseline,20,0.05577320425002195,0.0545350065001457,0.06154479230012837,573.1501353255651,1.1153718040004599,0.0,0.0
+CPU Contention,20,0.06838928670001673,0.06701975700002545,0.0727785064500722,467.4579290511362,1.3676919200001967,22.620329277548755,-18.44057948523258

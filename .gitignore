@@ -16,3 +16,27 @@ env/
 
 # Temporary files
 *.log
+# Downloaded dataset archive
+archive.zip
+
+# Raw external dataset (keep locally; document source)
+data/raw/
+
+# Generated dataset analysis outputs
+results/datacenter_analysis/
+
+# Generated experiment summaries and comparison outputs
+data/experiment_summary.csv
+# Raw external dataset and downloaded archive
+data/raw/
+archive.zip
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Temporary and exploratory outputs
+results/test_workload.csv
+results/scheduler_trace.csv
+results/scheduler_trace_benchmark.csv
+results/high_workload_traced.csv

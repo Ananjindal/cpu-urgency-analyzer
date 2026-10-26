@@ -1,0 +1,2 @@
+scope,records,mean_wake_to_run_us,median_wake_to_run_us,p95_wake_to_run_us,benchmark_specific
+system-wide exploratory telemetry,520,28.615384615384617,4.0,15.0,False

@@ -6,7 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 
-def cpu_token_work(prompt, tokens):
+def cpu_token_work(prompt, tokens, work_factor):
     """
     Controlled CPU-intensive workload representing
     computation performed during an inference request.
@@ -19,7 +19,7 @@ def cpu_token_work(prompt, tokens):
     for _ in range(tokens):
 
         # Simulate computation for generating a token
-        for _ in range(5000):
+        for _ in range(work_factor):
             data = hashlib.sha256(data).digest()
 
     end = time.perf_counter()
@@ -27,13 +27,14 @@ def cpu_token_work(prompt, tokens):
     return end - start
 
 
-def process_request(request_id, prompt, tokens):
+def process_request(request_id, prompt, tokens, work_factor):
 
     start_time = time.perf_counter()
 
     cpu_work = cpu_token_work(
         prompt,
-        tokens
+        tokens,
+	work_factor
     )
 
     end_time = time.perf_counter()
@@ -66,6 +67,12 @@ def main():
         type=int,
         default=32
     )
+    parser.add_argument(
+	"--work-factor",
+	type=int,
+	default=5000,
+	help="Hashing iterations per token"
+    )
 
     parser.add_argument(
         "--workers",
@@ -80,7 +87,7 @@ def main():
 
     args = parser.parse_args()
 
-    prompts = [
+    base_prompts = [
         "Explain operating systems.",
         "Explain CPU scheduling.",
         "Explain memory management.",
@@ -91,7 +98,10 @@ def main():
         "Explain distributed systems."
     ]
 
-    prompts = prompts[:args.requests]
+    prompts = [
+	base_prompts[i % len(base_prompts)]
+	for i in range(args.requests)
+    ]
 
     print()
     print("=" * 45)
@@ -101,6 +111,7 @@ def main():
     print(f"Requests : {len(prompts)}")
     print(f"Tokens   : {args.tokens}")
     print(f"Workers  : {args.workers}")
+    print(f"Work factor: {args.work_factor}")
     print()
 
     overall_start = time.perf_counter()
@@ -117,7 +128,8 @@ def main():
                 process_request,
                 request_id,
                 prompt,
-                args.tokens
+                args.tokens,
+		args.work_factor
             )
 
             futures.append(future)

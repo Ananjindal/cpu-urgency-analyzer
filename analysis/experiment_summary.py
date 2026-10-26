@@ -1,55 +1,49 @@
 import pandas as pd
+from pathlib import Path
 
-data = {
-    "Condition": [
-        "Baseline",
-        "CPU Contention",
-        "Pinned CPU"
-    ],
-    "Average Latency (s)": [
-        0.2035,
-        0.2369,
-        None
-    ],
-    "Average CPU Wait (us)": [
-        11.31,
-        11.34,
-        15.48
-    ]
+CONDITIONS = {
+    "Baseline": "data/baseline.csv",
+    "CPU Contention": "data/contention.csv",
 }
 
-df = pd.DataFrame(data)
+rows = []
 
-baseline_latency = df.loc[0, "Average Latency (s)"]
-baseline_wait = df.loc[0, "Average CPU Wait (us)"]
+for condition, path in CONDITIONS.items():
+    df = pd.read_csv(path)
 
-# Calculate latency increase only where latency data is available
-df["Latency Increase (%)"] = (
-    (df["Average Latency (s)"] - baseline_latency)
-    / baseline_latency * 100
-)
+    elapsed = df["end_time"].max() - df["start_time"].min()
+    total_tokens = int(df["tokens"].sum())
 
-# Calculate scheduler wait increase for all conditions
-df["Wait Increase (%)"] = (
-    (df["Average CPU Wait (us)"] - baseline_wait)
-    / baseline_wait * 100
-)
+    rows.append({
+        "Condition": condition,
+        "Requests": len(df),
+        "Mean Latency (s)": df["latency_s"].mean(),
+        "Median Latency (s)": df["latency_s"].median(),
+        "P95 Latency (s)": df["latency_s"].quantile(0.95),
+        "Throughput (tokens/s)": total_tokens / elapsed,
+        "Total Recorded Work Duration (s)": df["cpu_work_s"].sum(),
+    })
 
-# Pinned CPU latency was not measured
-df.loc[df["Condition"] == "Pinned CPU", "Latency Increase (%)"] = None
+result = pd.DataFrame(rows)
 
-# Save the summary
-df.to_csv("data/experiment_summary.csv", index=False)
+baseline_latency = result.loc[
+    result["Condition"] == "Baseline", "Mean Latency (s)"
+].iloc[0]
 
-# Display a cleaner version
-display_df = df.copy()
-display_df["Latency Increase (%)"] = display_df["Latency Increase (%)"].apply(
-    lambda x: "N/A" if pd.isna(x) else f"{x:.2f}"
-)
-display_df["Wait Increase (%)"] = display_df["Wait Increase (%)"].apply(
-    lambda x: f"{x:.2f}"
-)
+baseline_throughput = result.loc[
+    result["Condition"] == "Baseline", "Throughput (tokens/s)"
+].iloc[0]
 
-print("\n========== EXPERIMENT SUMMARY ==========\n")
-print(display_df.to_string(index=False))
-print("\nSaved to: data/experiment_summary.csv")
+result["Mean Latency Change (%)"] = (
+    result["Mean Latency (s)"] / baseline_latency - 1
+) * 100
+
+result["Throughput Change (%)"] = (
+    result["Throughput (tokens/s)"] / baseline_throughput - 1
+) * 100
+
+Path("data").mkdir(exist_ok=True)
+result.to_csv("data/experiment_summary.csv", index=False)
+
+print(result.round(4).to_string(index=False))
+print("\nSaved to data/experiment_summary.csv")

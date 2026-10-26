@@ -253,7 +253,22 @@ Generated plots include:
 - Throughput comparison
 
 Dataset analysis generates workload summaries, pressure distributions, correlation data, and representative scenario profiles.
+## Repeated Experiment Evaluation
 
+Three baseline trials and three CPU-contention trials were performed, with 20 requests per trial.
+
+| Metric | Baseline Average | CPU Contention Average | Change |
+|---|---:|---:|---:|
+| Mean latency | 57.16 ms | 70.03 ms | +22.53% |
+| Median latency | 56.74 ms | 67.96 ms | +19.77% |
+| P95 latency | 60.52 ms | 81.79 ms | +35.15% |
+| Throughput | 559.60 tokens/s | 456.48 tokens/s | -18.43% |
+
+The results show increased request latency and reduced throughput under CPU contention in the tested environment. Repeated trials help assess consistency, although results may vary with system load.
+
+The benchmark uses SHA-256 hashing to simulate CPU-intensive inference-like work; it does not run a real large language model. Scheduler telemetry is exploratory and system-wide, so it cannot be treated as a direct measurement of delay for each benchmark request.
+
+The raw trial results are stored in `results/repeated_runs/`, and the comparison script is `analysis/repeated_run_comparison.py`.
 ## 13. Limitations and Future Work
 
 - Repeat experiments to measure variability and improve confidence in comparisons.
